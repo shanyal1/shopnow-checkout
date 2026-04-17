@@ -2,10 +2,13 @@ import json
 import random
 import re
 import time
+import uuid
+from datetime import datetime, timezone
 import boto3
 
 dynamodb = boto3.resource('dynamodb')
 clicks_table = dynamodb.Table('shopnow-clicks')
+click_events_table = dynamodb.Table('shopnow-click-events')
 
 VALID_PROMO_PATTERN = re.compile(r'^[A-Z0-9]{4,12}$')
 
@@ -44,11 +47,32 @@ def handler(event, context):
     )
     clicks = int(resp['Attributes']['clicks'])
 
+    # Record individual click event for tracking
+    click_id = str(uuid.uuid4())
+    timestamp = datetime.now(timezone.utc).isoformat()
+    request_context = event.get('requestContext', {})
+    identity = request_context.get('identity', {})
+
+    click_event = {
+        'clickId': click_id,
+        'timestamp': timestamp,
+        'url': url,
+        'shortCode': code,
+        'sourceIp': identity.get('sourceIp', 'unknown'),
+        'userAgent': identity.get('userAgent', 'unknown'),
+    }
+    if promo_code:
+        click_event['promoCode'] = promo_code
+
+    click_events_table.put_item(Item=click_event)
+
     response = {
         'message': 'Payment processed successfully',
         'short_code': code,
+        'click_id': click_id,
         'url': url,
-        'clicks': clicks
+        'clicks': clicks,
+        'promo_banner': 'Memorial Day Sale \u2014 20% off with code MEMORIAL20'
     }
     if promo_code:
         response['promo_code'] = promo_code
