@@ -66,13 +66,37 @@ def handler(event, context):
 
     click_events_table.put_item(Item=click_event)
 
+    # Memorial Day promotion: 20% off orders over $50
+    order_total = body.get('order_total', 0)
+    try:
+        order_total = float(order_total)
+    except (TypeError, ValueError):
+        order_total = 0
+
+    promo = {
+        'name': 'Memorial Day Sale',
+        'description': '20% off orders over $50',
+        'code': 'MEMORIAL20',
+        'min_order': 50,
+        'discount_pct': 20,
+        'applied': False,
+        'discount_amount': 0,
+        'final_total': order_total
+    }
+
+    if order_total > 50 and promo_code == 'MEMORIAL20':
+        discount = round(order_total * 0.20, 2)
+        promo['applied'] = True
+        promo['discount_amount'] = discount
+        promo['final_total'] = round(order_total - discount, 2)
+
     response = {
         'message': 'Payment processed successfully',
         'short_code': code,
         'click_id': click_id,
         'url': url,
         'clicks': clicks,
-        'promo_banner': 'Memorial Day Sale \u2014 20% off with code MEMORIAL20'
+        'promo': promo
     }
     if promo_code:
         response['promo_code'] = promo_code
