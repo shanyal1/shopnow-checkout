@@ -75,16 +75,16 @@ def handler(event, context):
 
     promo = {
         'name': 'Memorial Day Sale',
-        'description': '20% off orders over $50',
+        'description': '20% off orders over $100',
         'code': 'MEMORIAL20',
-        'min_order': 50,
+        'min_order': 100,
         'discount_pct': 20,
         'applied': False,
         'discount_amount': 0,
         'final_total': order_total
     }
 
-    if order_total > 50 and promo_code == 'MEMORIAL20':
+    if order_total > 100 and promo_code == 'MEMORIAL20':
         discount = round(order_total * 0.20, 2)
         promo['applied'] = True
         promo['discount_amount'] = discount
